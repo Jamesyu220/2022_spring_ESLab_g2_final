@@ -41,10 +41,12 @@ void our_gyro(float* g_data)
 }
 
 void calibrate_gyro(){
+    return;
 }
 
 void calibrate_acc(){
     // use most frequent number
+    fprintf(stderr, "ebter function\n");
     int16_t acc_data[1000][3];
     printf("shit\n");
     for(int i = 0; i < 1000; ++i)
@@ -88,7 +90,7 @@ void calibrate_acc(){
     c_x /= 10;
     c_y /= 10;
     c_z /= 10;
-    printf("%d, %d, %d", c_x, c_y, c_z);
+    printf("after calibration: %d, %d, %d\n", c_x, c_y, c_z);
 }
 
 void calibrate_gyro_and_acc(){
@@ -109,8 +111,8 @@ int main()
     BSP_GYRO_Init();
     BSP_ACCELERO_Init();
  
-    //while(1) {
- 
+    while(1) {
+    // calibrate_acc();
  
         ThisThread::sleep_for(10ms);
  
@@ -121,16 +123,47 @@ int main()
         // printf("MAGNETO_Y = %d\n", pDataXYZ[1]);
         // printf("MAGNETO_Z = %d\n", pDataXYZ[2]);
  
-        our_gyro(pGyroDataXYZ);
+        // our_gyro(pGyroDataXYZ);
         // // printf("\nGYRO_X = %.2f\n", pGyroDataXYZ[0]);
         // // printf("GYRO_Y = %.2f\n", pGyroDataXYZ[1]);
         // printf("GYRO_Z = %.2f\n", pGyroDataXYZ[2]);
- 
-        our_acc(pDataXYZ);
+
+        int output = 0;
+        our_gyro(pGyroDataXYZ);
+        if(pGyroDataXYZ[2] > 200){
+            output = 1;
+        }else if(pGyroDataXYZ[2] < -200){
+            output = -2;
+        }else{
+            output = 0;
+        }
+        printf("\rGYRO_Z = %d\n", output);
+        
         // printf("\nACCELERO_X = %d\n", pDataXYZ[0]);
         // printf("ACCELERO_Y = %d\n", pDataXYZ[1]);
-        printf("\rACCELERO_Z = %d\n", pDataXYZ[2]);
- 
+
+        /*///////////////// acc ///////////////////////
+         * experiment of acc part
+            * x:
+                * right: -2, 1, 0
+            * y:
+                * forward: -2, 1, 0
+            * z:
+                * up: 1, -2, 0
+         */
+        // int output = 0;
+        // our_acc(pDataXYZ);
+        // if(pDataXYZ[0] > 200){
+        //     output = 1;
+        // }else if(pDataXYZ[0] < -200){
+        //     output = -2;
+        // }else{
+        //     output = 0;
+        // }
+        // printf("\rACCELERO_Z = %d\n", output);
+        ///////////////////////////////////////////////
+
+
         ThisThread::sleep_for(10ms);
         led = 0;
 
@@ -140,17 +173,36 @@ int main()
         // printf("MAGNETO_Z = %d\n", pDataXYZ[2]);
  
         our_gyro(pGyroDataXYZ);
+        if(pGyroDataXYZ[2] > 200){
+            output = 1;
+        }else if(pGyroDataXYZ[2] < -200){
+            output = -2;
+        }else{
+            output = 0;
+        }
+        printf("\rGYRO_Z = %d\n", output);
         // printf("\nGYRO_X = %.2f\n", pGyroDataXYZ[0]);
         // printf("GYRO_Y = %.2f\n", pGyroDataXYZ[1]);
         // printf("GYRO_Z = %.2f\n", pGyroDataXYZ[2]);
  
-        our_acc(pDataXYZ);
+        
         // printf("\nACCELERO_X = %d\n", pDataXYZ[0]);
         // printf("ACCELERO_Y = %d\n", pDataXYZ[1]);
-        printf("\rACCELERO_Z = %d\n", pDataXYZ[2]);
+
+        //////////////////// acc part /////////////////////
+        // our_acc(pDataXYZ);
+        // if(pDataXYZ[0] > 200){
+        //     output = 1;
+        // }else if(pDataXYZ[0] < -200){
+        //     output = -2;
+        // }else{
+        //     output = 0;
+        // }
+        // printf("\rACCELERO_Z = %d\n", output);
+        ///////////////////////////////////////////////////
  
  
-    //}
+    }
     printf("here\n");
     calibrate_acc();
 }
