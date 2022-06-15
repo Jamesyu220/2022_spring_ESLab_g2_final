@@ -3,26 +3,42 @@
 #include "ble/services/BatteryService.h"
 #include "events/mbed_events.h"
 #include "BLE_HID/mouse.h"
+#include "BLE_HID/keyboard.h"
 
 static events::EventQueue event_queue(/* event count */ 16 * EVENTS_EVENT_SIZE);
 
 
-class HIDMouse : public ble::Gap::EventHandler,
+class HIDComposite : public ble::Gap::EventHandler,
                  public SecurityManager::EventHandler,
-                 public BLEMouse{
-
+                 public BLEMouse,
+                 public BLEKeyboard
+{
 
 public:
     BLE &_ble;
-    HIDMouse(BLE &ble = BLE::Instance());
+    HIDComposite(BLE &ble = BLE::Instance());
     void begin();
 
-    void click(uint8_t b = MOUSE_BUTTON_LEFT);
-    void move(signed char x, signed char y, signed char wheel = 0);
-    void press(uint8_t b = MOUSE_BUTTON_LEFT);
-    void release(uint8_t b = MOUSE_BUTTON_LEFT);
-    bool isPressed(uint8_t b = MOUSE_BUTTON_LEFT);
+    void mouse_click(uint8_t b = MOUSE_BUTTON_LEFT);
+    void mouse_move(signed char x, signed char y, signed char wheel = 0);
+    void mouse_press(uint8_t b = MOUSE_BUTTON_LEFT);
+    void mouse_release(uint8_t b = MOUSE_BUTTON_LEFT);
+    bool mouse_isPressed(uint8_t b = MOUSE_BUTTON_LEFT);
 
+    // keyboard functions
+    size_t keyboard_write(uint8_t k);
+    size_t keyboard_write(const MediaKeyReport c);
+    size_t keyboard_write(const uint8_t *buffer, size_t size);
+
+    size_t keyboard_press(uint8_t k);
+    size_t keyboard_press(const MediaKeyReport k);
+
+    size_t keyboard_release(uint8_t keycode);
+    size_t keyboard_release(const MediaKeyReport k);
+
+    void keyboard_releaseAll();
+
+    // device info
     bool isConnected(void);
     void setManufacturerName(const char *manufacturersName2);
     void setDeviceName(const char *device_name2);

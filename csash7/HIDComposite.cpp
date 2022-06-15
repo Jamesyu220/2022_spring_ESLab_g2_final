@@ -7,7 +7,7 @@
 #include "BLE_HID/HIDServiceBase.h"
 #include "ble/services/BatteryService.h"
 #include "BLE_HID/HIDDeviceInformationService.h"
-#include "HIDMouse.h"
+#include "HIDComposite.h"
 
 /**
  * This program implements a complete HID-over-Gatt Profile:
@@ -26,12 +26,13 @@ rtos::Thread t;
 typedef ble_error_t (Gap::*disconnect_call_t)(ble::connection_handle_t, ble::local_disconnection_reason_t);
 const static disconnect_call_t disconnect_call = &Gap::disconnect;
 
-void HIDMouse::schedule_ble_events(BLE::OnEventsToProcessCallbackContext *context)
+void HIDComposite::schedule_ble_events(BLE::OnEventsToProcessCallbackContext *context)
 {
     _event_queue.call(mbed::Callback<void()>(&context->ble, &BLE::processEvents));
 }
 
-HIDMouse::HIDMouse(BLE &ble) : BLEMouse(ble),
+HIDComposite::HIDComposite(BLE &ble) : BLEMouse(ble),
+                                BLEKeyboard(ble),
                                _battery_level(50),
                                device_name("Example"),
                                manufacturersName("ARM"),
@@ -46,64 +47,100 @@ HIDMouse::HIDMouse(BLE &ble) : BLEMouse(ble),
 {
 }
 
-void HIDMouse::start()
+void HIDComposite::start()
 {
     _ble.onEventsToProcess(
-        makeFunctionPointer(this, &HIDMouse::schedule_ble_events));
+        makeFunctionPointer(this, &HIDComposite::schedule_ble_events));
 
     _ble.securityManager().setSecurityManagerEventHandler(this);
     _ble.gap().setEventHandler(this);
-    _ble.init(this, &HIDMouse::on_init_complete);
+    _ble.init(this, &HIDComposite::on_init_complete);
     t.start(mbed::callback(&_event_queue, &events::EventQueue::dispatch_forever));
 }
 
-void HIDMouse::click(uint8_t b)
+void HIDComposite::mouse_click(uint8_t b)
 {
     BLEMouse::click(b);
 }
 
-void HIDMouse::move(signed char x, signed char y, signed char wheel)
+void HIDComposite::mouse_move(signed char x, signed char y, signed char wheel)
 {
     BLEMouse::move(x, y, wheel);
 }
 
-void HIDMouse::press(uint8_t b)
+void HIDComposite::mouse_press(uint8_t b)
 {
     BLEMouse::press(b);
 }
 
-void HIDMouse::release(uint8_t b)
+void HIDComposite::mouse_release(uint8_t b)
 {
     BLEMouse::release(b);
 }
 
-bool HIDMouse::isPressed(uint8_t b)
+bool HIDComposite::mouse_isPressed(uint8_t b)
 {
     return BLEMouse::isPressed(b);
 }
 
-bool HIDMouse::isConnected()
+size_t HIDComposite::keyboard_write(uint8_t k)
+{
+    return BLEKeyboard::write(k);
+}
+size_t HIDComposite::keyboard_write(const MediaKeyReport c)
+{
+    return BLEKeyboard::write(c);
+}
+size_t HIDComposite::keyboard_write(const uint8_t *buffer, size_t size)
+{
+    return BLEKeyboard::write(buffer, size);
+}
+
+size_t HIDComposite::keyboard_press(uint8_t k)
+{
+    return BLEKeyboard::press(k);
+}
+size_t HIDComposite::keyboard_press(const MediaKeyReport k)
+{
+    return BLEKeyboard::press(k);
+}
+
+size_t HIDComposite::keyboard_release(uint8_t keycode)
+{
+    return BLEKeyboard::release(keycode);
+}
+size_t HIDComposite::keyboard_release(const MediaKeyReport k)
+{
+    return BLEKeyboard::release(k);
+}
+
+void HIDComposite::keyboard_releaseAll()
+{
+    return BLEKeyboard::releaseAll();
+}
+
+bool HIDComposite::isConnected()
 {
     return ifconnected;
 }
 
-void HIDMouse::setManufacturerName(const char *manufacturersName2)
+void HIDComposite::setManufacturerName(const char *manufacturersName2)
 {
     manufacturersName = manufacturersName2;
 }
 
-void HIDMouse::setDeviceName(const char *device_name2)
+void HIDComposite::setDeviceName(const char *device_name2)
 {
     device_name = device_name2;
 }
 
-void HIDMouse::setBatteryLevel(uint8_t _battery_level)
+void HIDComposite::setBatteryLevel(uint8_t _battery_level)
 {
     batteryService = true;
     _battery_service.updateBatteryLevel(_battery_level);
 }
 
-void HIDMouse::on_init_complete(BLE::InitializationCompleteCallbackContext *params)
+void HIDComposite::on_init_complete(BLE::InitializationCompleteCallbackContext *params)
 {
     if (params->error != BLE_ERROR_NONE)
     {
@@ -148,7 +185,7 @@ void setManufacturerInfo(BLE &ble, const char *manufacturersName)
     HIDDeviceInformationService deviceInfo(ble, manufacturersName, "m1", "abc", "def", "ghi", "jkl", &pnpID);
 }
 
-void HIDMouse::start_advertising()
+void HIDComposite::start_advertising()
 {
 
     ble::AdvertisingParameters adv_parameters(
@@ -205,14 +242,14 @@ void HIDMouse::start_advertising()
     _ble.securityManager().setPairingRequestAuthorisation(false);
 }
 
-void HIDMouse::onDisconnectionComplete(const ble::DisconnectionCompleteEvent &)
+void HIDComposite::onDisconnectionComplete(const ble::DisconnectionCompleteEvent &)
 {
     ifconnected = false;
     _ble.gap().startAdvertising(ble::LEGACY_ADVERTISING_HANDLE);
     _ble.securityManager().setPairingRequestAuthorisation(false);
 }
 
-void HIDMouse::onConnectionComplete(const ble::ConnectionCompleteEvent &event)
+void HIDComposite::onConnectionComplete(const ble::ConnectionCompleteEvent &event)
 {
     ifconnected = true;
 
@@ -231,14 +268,14 @@ void HIDMouse::onConnectionComplete(const ble::ConnectionCompleteEvent &event)
     }
 }
 
-void HIDMouse::pairingRequest(
+void HIDComposite::pairingRequest(
     ble::connection_handle_t connectionHandle)
 {
     // printf("Pairing requested - authorising\r\n");
     _ble.securityManager().acceptPairingRequest(connectionHandle);
 }
 
-void HIDMouse::pairingResult(
+void HIDComposite::pairingResult(
     ble::connection_handle_t connectionHandle,
     SecurityManager::SecurityCompletionStatus_t result)
 {
@@ -252,7 +289,7 @@ void HIDMouse::pairingResult(
     }
 }
 
-void HIDMouse::begin()
+void HIDComposite::begin()
 {
-    HIDMouse::start();
+    HIDComposite::start();
 }

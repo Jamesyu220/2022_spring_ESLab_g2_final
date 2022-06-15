@@ -1,4 +1,4 @@
-#include "./csash7/HIDMouse.h"
+#include "./csash7/HIDComposite.h"
 #include "mbed.h"
 #include "Mysensor.h"
 
@@ -9,11 +9,11 @@ AnalogIn y(A5);
 
 int main() {
   BLE &ble = BLE::Instance();
-  HIDMouse mouse(ble);
-  mouse.setDeviceName("Universal_Joystick");
-  mouse.setManufacturerName("ESLab_Team_2");
-  mouse.setBatteryLevel(50);
-  mouse.begin();
+  HIDComposite joystick(ble);
+  joystick.setDeviceName("Universal_Joystick");
+  joystick.setManufacturerName("ESLab_Team_2");
+  joystick.setBatteryLevel(50);
+  joystick.begin();
   gpio_t *big_black, *small_black, *yellow, *green, *sw;
   big_black = new gpio_t;
   small_black = new gpio_t;
@@ -51,24 +51,28 @@ int main() {
     // big black
     if (p_bb && !bb) {
       printf("press big black \n");
+      joystick.keyboard_write(KEY_UP_ARROW);
     } else if (!p_bb && bb) {
       printf("release big black \n");
     }
     // small black
     if (!p_sb && sb) {
       printf("press small black \n");
+      joystick.keyboard_write(KEY_DOWN_ARROW);
     } else if (p_sb && !sb) {
       printf("release small black \n");
     }
     // yellow
     if (!p_ye && ye) {
       printf("press yellow \n");
+      joystick.keyboard_write(KEY_LEFT_ARROW);
     } else if (p_ye && !ye) {
       printf("release yellow \n");
     }
     // green
     if (!p_gr && gr) {
       printf("press green \n");
+      joystick.keyboard_write(KEY_RIGHT_ARROW);
     } else if (p_gr && !gr) {
       printf("release green \n");
     }
@@ -152,7 +156,7 @@ int main() {
     //    ;
     // }
 
-    mouse.move(x_pos, y_pos);
+    joystick.mouse_move(x_pos, y_pos);
     ThisThread::sleep_for(30ms);
   }
 }
