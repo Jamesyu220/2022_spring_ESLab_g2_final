@@ -43,7 +43,9 @@ HIDComposite::HIDComposite(BLE &ble) : BLEMouse(ble),
                                batteryService(false),
                                _handle(0),
                                _adv_data_builder(_adv_buffer),
-                               ifconnected(false)
+                               ifconnected(false),
+                               pos_x(0),
+                               pos_y(0)
 {
 }
 
@@ -56,6 +58,8 @@ void HIDComposite::start()
     _ble.gap().setEventHandler(this);
     _ble.init(this, &HIDComposite::on_init_complete);
     t.start(mbed::callback(&_event_queue, &events::EventQueue::dispatch_forever));
+
+
 }
 
 void HIDComposite::mouse_click(uint8_t b)
@@ -66,6 +70,57 @@ void HIDComposite::mouse_click(uint8_t b)
 void HIDComposite::mouse_move(signed char x, signed char y, signed char wheel)
 {
     BLEMouse::move(x, y, wheel);
+    // pos_x += x;
+    // pos_y += y;
+}
+
+void HIDComposite::mouse_g28()
+{
+    for (int i = 0; i < 4; i++){
+        BLEMouse::move(-100, -100);
+        ThisThread::sleep_for(10ms);
+    }
+    pos_x = 0;
+    pos_y = 0;
+    ThisThread::sleep_for(50ms);
+}
+
+void HIDComposite::mouse_move_to(int x, int y)
+{
+    int x_rel = x - pos_x;
+    int y_rel = y - pos_y;
+    signed char x_rel_part, y_rel_part;
+    while (x_rel != 0 || y_rel != 0){
+        if (x_rel > 100){
+            x_rel_part = 100;
+            x_rel -= 100;
+        }
+        else if (x_rel < -100){
+            x_rel_part = -100;
+            x_rel += 100;
+        }
+        else{
+            x_rel_part = x_rel;
+            x_rel = 0;
+        }
+        if (y_rel > 100){
+            y_rel_part = 100;
+            y_rel -= 100;
+        }
+        else if (y_rel < -100){
+            y_rel_part = -100;
+            y_rel += 100;
+        }
+        else{
+            y_rel_part = y_rel;
+            y_rel = 0;
+        }
+        BLEMouse::move(x_rel_part, y_rel_part);
+        pos_x += x_rel_part;
+        pos_y += y_rel_part;
+        ThisThread::sleep_for(30ms);
+    }
+    printf("pos: %d, %d\n", pos_x, pos_y);
 }
 
 void HIDComposite::mouse_press(uint8_t b)

@@ -1,11 +1,21 @@
 #include "./csash7/HIDComposite.h"
 #include "mbed.h"
 #include "Mysensor.h"
+#include "USBMouse.h"
 
 static void MX_GPIO_Init(gpio_t &, gpio_t &, gpio_t &, gpio_t &, gpio_t &);
 AnalogIn x(A4);
 AnalogIn y(A5);
 // main() runs in its own thread in the OS
+
+#define FIRE_X 155
+#define FIRE_Y 195
+#define ANGLE_X 200
+#define ANGLE_Y 190
+#define POWER_X 200
+#define POWER_Y 225
+#define WEAPON_X 130
+#define WEAPON_Y 225
 
 int main() {
   BLE &ble = BLE::Instance();
@@ -24,8 +34,9 @@ int main() {
   int p_bb, p_sb, p_ye, p_gr, p_s;
   bool start = false;
 
-  uint16_t x_pos = 0x3000;
+  uint16_t x_pos = 0;
   uint16_t y_pos = 0;
+  bool is_g28 = false;
 
   MX_GPIO_Init(*big_black, *small_black, *yellow, *green, *sw);
   // unsigned long long int i = 0;
@@ -51,35 +62,56 @@ int main() {
     // big black
     if (p_bb && !bb) {
       printf("press big black \n");
-      joystick.keyboard_write(KEY_UP_ARROW);
+      joystick.mouse_g28();
+      ThisThread::sleep_for(30ms);
+      joystick.mouse_move_to(ANGLE_X, ANGLE_Y);
+      joystick.mouse_click(MOUSE_BUTTON_LEFT);
     } else if (!p_bb && bb) {
       printf("release big black \n");
+      joystick.mouse_click(MOUSE_BUTTON_LEFT);
     }
     // small black
     if (!p_sb && sb) {
       printf("press small black \n");
-      joystick.keyboard_write(KEY_DOWN_ARROW);
+      joystick.mouse_g28();
+      ThisThread::sleep_for(30ms);
+      joystick.mouse_move_to(FIRE_X, FIRE_Y);
+      joystick.mouse_click(MOUSE_BUTTON_LEFT);
     } else if (p_sb && !sb) {
       printf("release small black \n");
     }
     // yellow
     if (!p_ye && ye) {
       printf("press yellow \n");
-      joystick.keyboard_write(KEY_LEFT_ARROW);
+      joystick.mouse_g28();
+      ThisThread::sleep_for(30ms);
+      joystick.mouse_move_to(WEAPON_X, WEAPON_Y);
+      joystick.mouse_click(MOUSE_BUTTON_LEFT);
     } else if (p_ye && !ye) {
+      joystick.mouse_click(MOUSE_BUTTON_LEFT);
       printf("release yellow \n");
     }
     // green
     if (!p_gr && gr) {
       printf("press green \n");
-      joystick.keyboard_write(KEY_RIGHT_ARROW);
+      joystick.mouse_g28();
+      ThisThread::sleep_for(30ms);
+      joystick.mouse_move_to(POWER_X, POWER_Y);
+      ThisThread::sleep_for(30ms);
+      joystick.mouse_click(MOUSE_BUTTON_LEFT);
     } else if (p_gr && !gr) {
+      joystick.mouse_click(MOUSE_BUTTON_LEFT);
+      ThisThread::sleep_for(30ms);
+    //   joystick.mouse_g28();
+    //   ThisThread::sleep_for(30ms);
+    //   joystick.mouse_move_to(POWER_X, POWER_Y);
       printf("release green \n");
     }
 
     // sw
     if (p_s && !s) {
       printf("press sw \n");
+      joystick.mouse_click();
     } else if (!p_s && s) {
       printf("release sw \n");
     }
@@ -92,69 +124,69 @@ int main() {
 
     // x.set_reference_voltage(5.0f);
     if (x.read() > 0.6f) {
-      printf("back \n");
-      y_pos += 10;
+      printf("right \n");
+      x_pos += 10;
     } else if (x.read() < 0.4f) {
-      printf("go \n");
-      y_pos -= 10;
+      printf("left \n");
+      x_pos -= 10;
     }
 
     if (y.read() > 0.6f) {
-      printf("left \n");
-      x_pos -= 10;
-    } else if (y.read() < 0.4f) {
-      printf("right \n");
-      x_pos += 10;
-    }
-    int gyro_output, acc_output;
-    Mysensor(&gyro_output, &acc_output);
-    if (gyro_output & GYRO_Z_CLK) {
-      x_pos += 10;
-    } else if (gyro_output & GYRO_Z_CCLK) {
-      x_pos -= 10;
-    } else {
-      ;
-    }
-
-    if (gyro_output & GYRO_Y_R) {
-      x_pos += 10;
-    } else if (gyro_output & GYRO_Y_L) {
-      x_pos -= 10;
-    } else {
-      ;
-    }
-
-    if (gyro_output & GYRO_X_B) {
-      y_pos -= 10;
-    } else if (gyro_output & GYRO_X_F) {
+      printf("down \n");
       y_pos += 10;
-    } else {
-      ;
+    } else if (y.read() < 0.4f) {
+      printf("up \n");
+      y_pos -= 10;
     }
-
-    // if(acc_output & ACC_Z_U){
-    //     y_pos -= 10;
-    // }else if(acc_output & ACC_Z_D){
-    //     y_pos += 10;
-    // }else{
-    //     ;
+    // int gyro_output, acc_output;
+    // Mysensor(&gyro_output, &acc_output);
+    // if (gyro_output & GYRO_Z_CLK) {
+    //   x_pos += 10;
+    // } else if (gyro_output & GYRO_Z_CCLK) {
+    //   x_pos -= 10;
+    // } else {
+    //   ;
     // }
 
-    // if(acc_output & ACC_Y_F){
-    //     printf("move front, ");
-    // }else if(acc_output & ACC_Y_B){
-    //     printf("move back, ");
-    // }else{
-    //     printf("no y, ");
+    // if (gyro_output & GYRO_Y_R) {
+    //   x_pos += 10;
+    // } else if (gyro_output & GYRO_Y_L) {
+    //   x_pos -= 10;
+    // } else {
+    //   ;
     // }
 
-    // if(acc_output & ACC_X_R){
-    //     x_pos += 10;
-    // }else if(acc_output & ACC_X_L){
-    //     x_pos -= 10;
-    // }else{
-    //    ;
+    // if (gyro_output & GYRO_X_B) {
+    //   y_pos -= 10;
+    // } else if (gyro_output & GYRO_X_F) {
+    //   y_pos += 10;
+    // } else {
+    //   ;
     // }
+
+    // // if(acc_output & ACC_Z_U){
+    // //     y_pos -= 10;
+    // // }else if(acc_output & ACC_Z_D){
+    // //     y_pos += 10;
+    // // }else{
+    // //     ;
+    // // }
+
+    // // if(acc_output & ACC_Y_F){
+    // //     printf("move front, ");
+    // // }else if(acc_output & ACC_Y_B){
+    // //     printf("move back, ");
+    // // }else{
+    // //     printf("no y, ");
+    // // }
+
+    // // if(acc_output & ACC_X_R){
+    // //     x_pos += 10;
+    // // }else if(acc_output & ACC_X_L){
+    // //     x_pos -= 10;
+    // // }else{
+    // //    ;
+    // // }
 
     joystick.mouse_move(x_pos, y_pos);
     ThisThread::sleep_for(30ms);

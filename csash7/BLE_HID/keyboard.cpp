@@ -206,7 +206,7 @@ size_t BLEKeyboard::press(uint8_t k)
     // if (!k)
     // {
     //   setWriteError();
-    printf("setWriteError\n");
+    printf("printable\n");
     //   return 0;
     // }
     if (k & 0x80)

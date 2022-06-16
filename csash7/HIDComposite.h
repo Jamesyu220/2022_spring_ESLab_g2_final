@@ -24,6 +24,8 @@ public:
     void mouse_press(uint8_t b = MOUSE_BUTTON_LEFT);
     void mouse_release(uint8_t b = MOUSE_BUTTON_LEFT);
     bool mouse_isPressed(uint8_t b = MOUSE_BUTTON_LEFT);
+    void mouse_move_to(int x, int y);
+    void mouse_g28();
 
     // keyboard functions
     size_t keyboard_write(uint8_t k);
@@ -61,6 +63,8 @@ private:
     ble::AdvertisingDataBuilder _adv_data_builder;
     ble::connection_handle_t _handle;
     bool ifconnected;
+
+    int pos_x, pos_y;
 
 private:
     void start(void);
