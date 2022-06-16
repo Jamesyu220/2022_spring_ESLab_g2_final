@@ -1,7 +1,6 @@
-// #include "./csash7/HIDComposite.h"
+#include "./csash7/HIDComposite.h"
 #include "mbed.h"
 #include "Mysensor.h"
-#include "USBMouse.h"
 
 static void MX_GPIO_Init(gpio_t &, gpio_t &, gpio_t &, gpio_t &, gpio_t &);
 AnalogIn x(A4);
@@ -17,68 +16,16 @@ AnalogIn y(A5);
 #define WEAPON_X 130
 #define WEAPON_Y 225
 
-uint16_t x_pos = 0;
-uint16_t y_pos = 0;
-
-USBMouse mouse;
-
-void mouse_g28(){
-    for (int i = 0; i < 4; i++){
-        mouse.move(-100, -100);
-        ThisThread::sleep_for(10ms);
-    }
-    x_pos = 0;
-    y_pos = 0;
-    ThisThread::sleep_for(50ms);
-}
-
-void mouse_move_to(int x, int y)
-{
-    int x_rel = x - x_pos;
-    int y_rel = y - y_pos;
-    signed char x_rel_part, y_rel_part;
-    while (x_rel != 0 || y_rel != 0){
-        if (x_rel > 100){
-            x_rel_part = 100;
-            x_rel -= 100;
-        }
-        else if (x_rel < -100){
-            x_rel_part = -100;
-            x_rel += 100;
-        }
-        else{
-            x_rel_part = x_rel;
-            x_rel = 0;
-        }
-        if (y_rel > 100){
-            y_rel_part = 100;
-            y_rel -= 100;
-        }
-        else if (y_rel < -100){
-            y_rel_part = -100;
-            y_rel += 100;
-        }
-        else{
-            y_rel_part = y_rel;
-            y_rel = 0;
-        }
-        mouse.move(x_rel_part, y_rel_part);
-        x_pos += x_rel_part;
-        y_pos += y_rel_part;
-        ThisThread::sleep_for(30ms);
-    }
-    printf("pos: %d, %d\n", x_pos, y_pos);
-}
-
-
-
 int main() {
     printf("start calibration...\n");
-    // data_init();
+    data_init();
     printf("start calibration...\n");
-//   BLE &ble = BLE::Instance();
-//   USBMouse mouse;
-  
+  BLE &ble = BLE::Instance();
+  HIDComposite joystick(ble);
+  joystick.setDeviceName("Universal_Joystick");
+  joystick.setManufacturerName("ESLab_Team_2");
+  joystick.setBatteryLevel(50);
+  joystick.begin();
   gpio_t *big_black, *small_black, *yellow, *green, *sw;
   big_black = new gpio_t;
   small_black = new gpio_t;
@@ -89,7 +36,8 @@ int main() {
   int p_bb, p_sb, p_ye, p_gr, p_s;
   bool start = false;
 
-  
+  uint16_t x_pos = 0;
+  uint16_t y_pos = 0;
   bool is_g28 = false;
 
   MX_GPIO_Init(*big_black, *small_black, *yellow, *green, *sw);
@@ -116,56 +64,56 @@ int main() {
     // big black
     if (p_bb && !bb) {
       printf("press big black \n");
-      mouse_g28();
+      joystick.mouse_g28();
       ThisThread::sleep_for(30ms);
-      mouse_move_to(ANGLE_X, ANGLE_Y);
-      mouse.click(MOUSE_LEFT);
+      joystick.mouse_move_to(ANGLE_X, ANGLE_Y);
+      joystick.mouse_click(MOUSE_BUTTON_LEFT);
     } else if (!p_bb && bb) {
       printf("release big black \n");
-    //   mouse.click(MOUSE_LEFT);
+      joystick.mouse_click(MOUSE_BUTTON_LEFT);
     }
     // small black
     if (!p_sb && sb) {
       printf("press small black \n");
-      mouse_g28();
+      joystick.mouse_g28();
       ThisThread::sleep_for(30ms);
-      mouse_move_to(FIRE_X, FIRE_Y);
-      mouse.click(MOUSE_LEFT);
+      joystick.mouse_move_to(FIRE_X, FIRE_Y);
+      joystick.mouse_click(MOUSE_BUTTON_LEFT);
     } else if (p_sb && !sb) {
       printf("release small black \n");
     }
     // yellow
     if (!p_ye && ye) {
       printf("press yellow \n");
-      mouse_g28();
+      joystick.mouse_g28();
       ThisThread::sleep_for(30ms);
-      mouse_move_to(WEAPON_X, WEAPON_Y);
-      mouse.click(MOUSE_LEFT);
+      joystick.mouse_move_to(WEAPON_X, WEAPON_Y);
+      joystick.mouse_click(MOUSE_BUTTON_LEFT);
     } else if (p_ye && !ye) {
-    //   mouse.click(MOUSE_LEFT);
+      joystick.mouse_click(MOUSE_BUTTON_LEFT);
       printf("release yellow \n");
     }
     // green
     if (!p_gr && gr) {
       printf("press green \n");
-      mouse_g28();
+      joystick.mouse_g28();
       ThisThread::sleep_for(30ms);
-      mouse_move_to(POWER_X, POWER_Y);
+      joystick.mouse_move_to(POWER_X, POWER_Y);
       ThisThread::sleep_for(30ms);
-      mouse.click(MOUSE_LEFT);
+      joystick.mouse_click(MOUSE_BUTTON_LEFT);
     } else if (p_gr && !gr) {
-    //   mouse.click(MOUSE_LEFT);
+      joystick.mouse_click(MOUSE_BUTTON_LEFT);
       ThisThread::sleep_for(30ms);
-    //   mouse_g28();
+    //   joystick.mouse_g28();
     //   ThisThread::sleep_for(30ms);
-    //   mouse_move_to(POWER_X, POWER_Y);
+    //   joystick.mouse_move_to(POWER_X, POWER_Y);
       printf("release green \n");
     }
 
     // sw
     if (p_s && !s) {
       printf("press sw \n");
-      mouse.click(MOUSE_LEFT);
+      joystick.mouse_click();
     } else if (!p_s && s) {
       printf("release sw \n");
     }
@@ -242,7 +190,7 @@ int main() {
     // //    ;
     // // }
 
-    mouse.move(x_pos, y_pos);
+    joystick.mouse_move(x_pos, y_pos);
     ThisThread::sleep_for(30ms);
   }
 }

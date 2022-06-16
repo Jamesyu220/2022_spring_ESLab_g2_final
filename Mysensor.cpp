@@ -347,31 +347,31 @@ int Mysensor(int *rotation, int *move)
     }
     *rotation = gyro_output;
     // ////////////////////// print status
-    printf("gyro status: ");
-    if(gyro_output & GYRO_Z_CLK){
-        printf("clockwise, ");
-    }else if(gyro_output & GYRO_Z_CCLK){
-        printf("counter clockwise, ");
-    }else{
-        printf("no z, ");
-    }
+    // printf("gyro status: ");
+    // if(gyro_output & GYRO_Z_CLK){
+    //     printf("clockwise, ");
+    // }else if(gyro_output & GYRO_Z_CCLK){
+    //     printf("counter clockwise, ");
+    // }else{
+    //     printf("no z, ");
+    // }
 
-    if(gyro_output & GYRO_Y_R){
-        printf("right tilted, ");
-    }else if(gyro_output & GYRO_Y_L){
-        printf("left tilted, ");
-    }else{
-        printf("no y, ");
-    }
+    // if(gyro_output & GYRO_Y_R){
+    //     printf("right tilted, ");
+    // }else if(gyro_output & GYRO_Y_L){
+    //     printf("left tilted, ");
+    // }else{
+    //     printf("no y, ");
+    // }
 
-    if(gyro_output & GYRO_X_B){
-        printf("backwward, ");
-    }else if(gyro_output & GYRO_X_F){
-        printf("frontward, ");
-    }else{
-        printf("no x, ");
-    }
-    printf("\n");
+    // if(gyro_output & GYRO_X_B){
+    //     printf("backwward, ");
+    // }else if(gyro_output & GYRO_X_F){
+    //     printf("frontward, ");
+    // }else{
+    //     printf("no x, ");
+    // }
+    // printf("\n");
     ////////////////////////////////////////////
 
     ////////////// checking walk state ////////////

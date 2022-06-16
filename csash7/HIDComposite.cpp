@@ -58,8 +58,8 @@ void HIDComposite::start()
     _ble.gap().setEventHandler(this);
     _ble.init(this, &HIDComposite::on_init_complete);
     t.start(mbed::callback(&_event_queue, &events::EventQueue::dispatch_forever));
-
-
+    printf("ble started.\n");
+ 
 }
 
 void HIDComposite::mouse_click(uint8_t b)
@@ -300,6 +300,7 @@ void HIDComposite::start_advertising()
 void HIDComposite::onDisconnectionComplete(const ble::DisconnectionCompleteEvent &)
 {
     ifconnected = false;
+    printf("BLE disconnected.\n");
     _ble.gap().startAdvertising(ble::LEGACY_ADVERTISING_HANDLE);
     _ble.securityManager().setPairingRequestAuthorisation(false);
 }
@@ -307,7 +308,7 @@ void HIDComposite::onDisconnectionComplete(const ble::DisconnectionCompleteEvent
 void HIDComposite::onConnectionComplete(const ble::ConnectionCompleteEvent &event)
 {
     ifconnected = true;
-
+    printf("BLE connected.\n");
     ble_error_t error;
 
     _handle = event.getConnectionHandle();
