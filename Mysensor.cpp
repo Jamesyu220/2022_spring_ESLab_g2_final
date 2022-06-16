@@ -277,9 +277,9 @@ int Mysensor(int *rotation, int *move)
     // printf("Start sensor init\n");
 
  
-    BSP_MAGNETO_Init();
-    BSP_GYRO_Init();
-    BSP_ACCELERO_Init();
+    // BSP_MAGNETO_Init();
+    // BSP_GYRO_Init();
+    // BSP_ACCELERO_Init();
     
  
  
@@ -287,22 +287,22 @@ int Mysensor(int *rotation, int *move)
     gyro_output = 0;
     our_gyro(pGyroDataXYZ);
     if(pGyroDataXYZ[2] > 200){
-        gyro_output |= GYRO_Z_CCLK;
+        gyro_output |= GYRO_Z_CLK;
         count += 1;
     }else if(pGyroDataXYZ[2] < -200){
-        gyro_output |= GYRO_Z_CLK;
+        gyro_output |= GYRO_Z_CCLK;
         count -= 1;
     }if(pGyroDataXYZ[2] > 100){
-        gyro_output |= GYRO_Z_CCLK_WEAK;
+        gyro_output |= GYRO_Z_CLK_WEAK;
         count += 1;
     }else if(pGyroDataXYZ[2] < -100){
-        gyro_output |= GYRO_Z_CLK_WEAK;
+        gyro_output |= GYRO_Z_CCLK_WEAK;
         count -= 1;
     }if(pGyroDataXYZ[2] > 500){
-        gyro_output |= GYRO_Z_CCLK_STRONG;
+        gyro_output |= GYRO_Z_CLK_STRONG;
         count += 1;
     }else if(pGyroDataXYZ[2] < -500){
-        gyro_output |= GYRO_Z_CLK_STRONG;
+        gyro_output |= GYRO_Z_CCLK_STRONG;
         count -= 1;
     }
 
@@ -327,67 +327,67 @@ int Mysensor(int *rotation, int *move)
     }
 
     if(pGyroDataXYZ[0] > 200){
-        gyro_output |= GYRO_X_F;
+        gyro_output |= GYRO_X_B;
         count += 1;
     }else if(pGyroDataXYZ[0] < -200){
-        gyro_output |= GYRO_X_B;
+        gyro_output |= GYRO_X_F;
         count -= 1;
     }if(pGyroDataXYZ[0] > 100){
-        gyro_output |= GYRO_X_F_WEAK;
+        gyro_output |= GYRO_X_B_WEAK;
         count += 1;
     }else if(pGyroDataXYZ[0] < -100){
-        gyro_output |= GYRO_X_B_WEAK;
+        gyro_output |= GYRO_X_F_WEAK;
         count -= 1;
     }if(pGyroDataXYZ[0] > 500){
-        gyro_output |= GYRO_X_F_STRONG;
+        gyro_output |= GYRO_X_B_STRONG;
         count += 1;
     }else if(pGyroDataXYZ[0] < -500){
-        gyro_output |= GYRO_X_B_STRONG;
+        gyro_output |= GYRO_X_F_STRONG;
         count -= 1;
     }
     *rotation = gyro_output;
     // ////////////////////// print status
-    // printf("gyro status: ");
-    // if(gyro_output & GYRO_Z_CLK){
-    //     printf("clockwise, ");
-    // }else if(gyro_output & GYRO_Z_CCLK){
-    //     printf("counter clockwise, ");
-    // }else{
-    //     printf("no z, ");
-    // }
+    printf("gyro status: ");
+    if(gyro_output & GYRO_Z_CLK){
+        printf("clockwise, ");
+    }else if(gyro_output & GYRO_Z_CCLK){
+        printf("counter clockwise, ");
+    }else{
+        printf("no z, ");
+    }
 
-    // if(gyro_output & GYRO_Y_R){
-    //     printf("right tilted, ");
-    // }else if(gyro_output & GYRO_Y_L){
-    //     printf("left tilted, ");
-    // }else{
-    //     printf("no y, ");
-    // }
+    if(gyro_output & GYRO_Y_R){
+        printf("right tilted, ");
+    }else if(gyro_output & GYRO_Y_L){
+        printf("left tilted, ");
+    }else{
+        printf("no y, ");
+    }
 
-    // if(gyro_output & GYRO_X_B){
-    //     printf("backwward, ");
-    // }else if(gyro_output & GYRO_X_F){
-    //     printf("frontward, ");
-    // }else{
-    //     printf("no x, ");
-    // }
-    // printf("\n");
+    if(gyro_output & GYRO_X_B){
+        printf("backwward, ");
+    }else if(gyro_output & GYRO_X_F){
+        printf("frontward, ");
+    }else{
+        printf("no x, ");
+    }
+    printf("\n");
     ////////////////////////////////////////////
 
     ////////////// checking walk state ////////////
-    for(int i = 0; i < WALK_WINDOW_SIZE-1; ++i){
-        walk_status[i] = walk_status[i+1];
-    }
-    walk_status[WALK_WINDOW_SIZE-1] = gyro_output & (GYRO_Y_L_STRONG|GYRO_Y_R_STRONG);
-    int walk_count;
-    walk_count = 0;
-    for(int i = 0; i < WALK_WINDOW_SIZE-1; ++i){
-        if(walk_status[i] != walk_status[i+1]) walk_count += 1;
-    }
-    if(walk_count > WALK_WINDOW_TRANSITION){
-        printf("the man is walking!!!\n");
-        return 0;
-    }
+    // for(int i = 0; i < WALK_WINDOW_SIZE-1; ++i){
+    //     walk_status[i] = walk_status[i+1];
+    // }
+    // walk_status[WALK_WINDOW_SIZE-1] = gyro_output & (GYRO_Y_L_STRONG|GYRO_Y_R_STRONG);
+    // int walk_count;
+    // walk_count = 0;
+    // for(int i = 0; i < WALK_WINDOW_SIZE-1; ++i){
+    //     if(walk_status[i] != walk_status[i+1]) walk_count += 1;
+    // }
+    // if(walk_count > WALK_WINDOW_TRANSITION){
+    //     printf("the man is walking!!!\n");
+    //     return 0;
+    // }
     //////////////////////////////////////////////
     /*///////////////// acc ///////////////////////
         * experiment of acc part

@@ -140,8 +140,8 @@ int main() {
       printf("up \n");
       y_pos -= 10;
     }
-    // int gyro_output, acc_output;
-    // Mysensor(&gyro_output, &acc_output);
+    int gyro_output, acc_output;
+    Mysensor(&gyro_output, &acc_output);
     // if (gyro_output & GYRO_Z_CLK) {
     //   x_pos += 10;
     // } else if (gyro_output & GYRO_Z_CCLK) {

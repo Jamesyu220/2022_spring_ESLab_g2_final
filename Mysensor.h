@@ -2,24 +2,24 @@
 #define _MYSENSOR_H
 #include "mbed.h"
 
-#define GYRO_Z_CLK 1
-#define GYRO_Z_CCLK 2
+#define GYRO_Z_CCLK 1
+#define GYRO_Z_CLK 2
 #define GYRO_Y_R 4
 #define GYRO_Y_L 8
-#define GYRO_X_B 16
-#define GYRO_X_F 32
-#define GYRO_Z_CLK_WEAK 64
-#define GYRO_Z_CCLK_WEAK 128
+#define GYRO_X_F 16
+#define GYRO_X_B 32
+#define GYRO_Z_CCLK_WEAK 64
+#define GYRO_Z_CLK_WEAK 128
 #define GYRO_Y_R_WEAK 256
 #define GYRO_Y_L_WEAK 512
-#define GYRO_X_B_WEAK 1024
-#define GYRO_X_F_WEAK 2048
-#define GYRO_Z_CLK_STRONG (1 << 12)
-#define GYRO_Z_CCLK_STRONG (1 << 13)
+#define GYRO_X_F_WEAK 1024
+#define GYRO_X_B_WEAK 2048
+#define GYRO_Z_CCLK_STRONG (1 << 12)
+#define GYRO_Z_CLK_STRONG (1 << 13)
 #define GYRO_Y_R_STRONG (1 << 14)
 #define GYRO_Y_L_STRONG (1 << 15)
-#define GYRO_X_B_STRONG (1 << 16)
-#define GYRO_X_F_STRONG (1 << 17)
+#define GYRO_X_F_STRONG (1 << 16)
+#define GYRO_X_B_STRONG (1 << 17)
 
 #define ACC_Z_U 1
 #define ACC_Z_D 2
