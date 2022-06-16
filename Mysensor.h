@@ -52,9 +52,9 @@
 
 void our_acc(int16_t * acc_data);
 void our_gyro(float* g_data);
-void calibrate_gyro();
-void calibrate_acc();
-void calibrate_gyro_and_acc();
+void calibrate_gyro(void const *name);
+void calibrate_acc(void const *name);
+void data_init();
 int Mysensor(int *rotation, int *move);
 
 #endif

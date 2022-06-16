@@ -10,10 +10,20 @@
 #include <cstdint>
 #include "Mysensor.h"
  
+
+#define STANDARD_PARAM 0
+int acc_is_first = 1;
+int gyro_is_first = 1;
+
 DigitalOut led(LED1);
 int acc_x_normalize = 30;
 int acc_y_normalize = 0;
 int acc_z_normalize = 1015; // positive: moving upward
+
+// int acc_x_normalize = 0;
+// int acc_y_normalize = 0;
+// int acc_z_normalize = 0; // positive: moving upward
+
 
 float gyro_x_normalize = -210; // positive: front moving downward
 float gyro_y_normalize = -700;
@@ -64,6 +74,21 @@ int STRONG_TH = 800;
 int MID_TH = 200;
 int WEAK_TH = 100;
 
+Mutex acc_mutex;
+Mutex gyro_mutex;
+Mutex sensor_mutex;
+Mutex rotation_mutex;
+Mutex move_mutex;
+
+int rotation;
+int my_move;
+
+Thread t1;
+Thread t2;
+Thread t3;
+Thread t4;
+Thread e_thread;
+
 void our_acc(int16_t * acc_data)
 {
     BSP_ACCELERO_AccGetXYZ(acc_data);
@@ -83,62 +108,158 @@ void our_gyro(float* g_data)
     }
 }
 
-void calibrate_gyro(){
-    return;
-}
-
-void calibrate_acc(){
-    // use most frequent number
-    fprintf(stderr, "enter function\n");
-    int16_t acc_data[1000][3];
-    printf("shit\n");
-    for(int i = 0; i < 1000; ++i)
+void calibrate_gyro(void const *name){
+    gyro_mutex.lock();
+    float g_data[100][3];
+    sensor_mutex.lock();
+    for(int i = 0; i < 100; ++i)
     {
-        BSP_ACCELERO_AccGetXYZ(acc_data[i]);
+        BSP_GYRO_GetXYZ(g_data[i]);
+        // printf("gyro: (%f, %f, %f) \n", g_data[i][0], g_data[i][1], g_data[i][2]);
     }
-    // printf("fuck \n");
-    int16_t c_x = 0;
-    int16_t c_y = 0;
-    int16_t c_z = 0;
-    for(int i = 0; i < 10; ++i)
+    sensor_mutex.unlock();
+    
+    float c_x = 0;
+    float c_y = 0;
+    float c_z = 0;
+    for(int i = 0; i < 100; ++i)
     {
-        printf("i: %d\n", i);
-        int16_t tmp_x = 0;
-        int16_t tmp_y = 0;
-        int16_t tmp_z = 0;
+        // printf("i: %d\n", i);
         
-        int x_count = 0;
-        int y_count = 0;
-        int z_count = 0;
-        for(int j = 0; j < 100; ++j)
-        {
-            if(abs(acc_data[100*i+j][0] - acc_data[100*i+j-1][0]) <= 10){
-                tmp_x += acc_data[100*i+j][0];
-                x_count += 1;
-            }
-            if(abs(acc_data[100*i+j][1] - acc_data[100*i+j-1][1]) <= 10){
-                tmp_y += acc_data[100*i+j][1];
-                y_count += 1;
-            }
-            if(abs(acc_data[100*i+j][2] - acc_data[100*i+j-1][2]) <= 10){ 
-                tmp_z += acc_data[100*i+j][2];
-                z_count += 1;
-            }
-        }
-        c_x += tmp_x / x_count;
-        c_y += tmp_y / y_count;
-        c_z += tmp_z / z_count;
+        
+        c_x += g_data[i][0];
+        c_y += g_data[i][1];
+        c_z += g_data[i][2];
 
     }
-    c_x /= 10;
-    c_y /= 10;
-    c_z /= 10;
-    printf("after calibration: %d, %d, %d\n", c_x, c_y, c_z);
+    c_x = c_x/100;
+    c_y = c_y/100;
+    c_z = c_z/100;
+    printf("thread %d after gyro calibration: %f, %f, %f\n", *((int*)name), c_x, c_y, c_z);
+    gyro_mutex.lock();
+    if(gyro_is_first && !STANDARD_PARAM)
+        gyro_x_normalize = c_x;
+    else
+        gyro_x_normalize = (gyro_x_normalize + c_x) / 2;
+    if(gyro_is_first && !STANDARD_PARAM)
+        gyro_y_normalize = c_y;
+    else
+        gyro_y_normalize = (gyro_y_normalize + c_y) / 2;
+    if(gyro_is_first && !STANDARD_PARAM)
+        gyro_z_normalize = c_z;
+    else
+        gyro_z_normalize = (gyro_z_normalize + c_z) / 2;
+    if(gyro_is_first == 1){
+        gyro_is_first = 0;
+    }
+    gyro_mutex.unlock();
 }
 
-void calibrate_gyro_and_acc(){
-    calibrate_gyro();
-    calibrate_acc();
+void calibrate_acc(void const *name){
+    // use most frequent number
+    int16_t acc_data[100][3];
+    sensor_mutex.lock();
+    for(int i = 0; i < 100; ++i)
+    {
+        
+        BSP_ACCELERO_AccGetXYZ(acc_data[i]);
+        // printf("acc: (%d, %d, %d) \n", acc_data[i][0], acc_data[i][1], acc_data[i][2]);
+    }
+    sensor_mutex.unlock();
+    // printf("fuck \n");
+    int c_x = 0;
+    int c_y = 0;
+    int c_z = 0;
+    for(int i = 0; i < 100; ++i)
+    {
+        // printf("i: %d\n", i);
+        // int16_t tmp_x = 0;
+        // int16_t tmp_y = 0;
+        // int16_t tmp_z = 0;
+        
+        // if ( i != 0){
+        //     if(abs(acc_data[i][0] - acc_data[i-1][0]) <= 50){
+        //         tmp_x += acc_data[i][0];
+            
+        //     }
+        //     if(abs(acc_data[i][1] - acc_data[i-1][1]) <= 50){
+        //         tmp_y += acc_data[i][1];
+        //     }
+        //     if(abs(acc_data[i][2] - acc_data[i-1][2]) <= 50){ 
+        //         tmp_z += acc_data[i][2];
+        //     }
+        // }
+        
+        
+        c_x = c_x + (int)acc_data[i][0];
+        c_y = c_y + (int)acc_data[i][1];
+        c_z = c_z + (int)acc_data[i][2];
+        // printf("%d: thread %d adding acc calibration: %d, %d, %d\n", i, *((int*)name), c_x, c_y, c_z);
+
+    }
+    printf("thread %d before acc calibration: %d, %d, %d\n", *((int*)name), c_x, c_y, c_z);
+    c_x = (int)((float)c_x/100.0);
+    c_y = (int)((float)c_y/100.0);
+    c_z = (int)((float)c_z/100.0);
+    printf("thread %d after acc calibration: %d, %d, %d\n", *((int*)name), c_x, c_y, c_z);
+    acc_mutex.lock();
+    if(acc_is_first && !STANDARD_PARAM)
+        acc_x_normalize = c_x;
+    else
+        acc_x_normalize = (acc_x_normalize + c_x) / 2;
+    if(acc_is_first && !STANDARD_PARAM)
+        acc_y_normalize = c_y;
+    else
+        acc_y_normalize = (acc_y_normalize + c_y) / 2;
+    if(acc_is_first && !STANDARD_PARAM)
+        acc_z_normalize = c_z;
+    else
+        acc_z_normalize = (acc_z_normalize + c_z) / 2;
+    if(acc_is_first == 1){
+        acc_is_first = 0;
+    }
+    // acc_y_normalize = (acc_y_normalize + c_y) / 2;
+    // acc_z_normalize = (acc_z_normalize + c_z) / 2;
+    acc_mutex.unlock();
+}
+
+// void calibrate_gyro_and_acc(){
+//     calibrate_gyro();
+//     calibrate_acc();
+// }
+
+void data_init(){
+    //     float sensor_value = 0;
+    int16_t pDataXYZ[3] = {0};
+    float pGyroDataXYZ[3] = {0};
+
+    printf("Start sensor init\n");
+
+    // int buffer_count_f = 0;
+    // int buffer_count_b = 0;
+    // int buffer_count_u = 0;
+    // int buffer_count_d = 0;
+    // int buffer_count_l = 0;
+    // int buffer_count_r = 0;
+    BSP_MAGNETO_Init();
+    BSP_GYRO_Init();
+    BSP_ACCELERO_Init();
+    const int a1 = 1;
+    const int a2 = 2;
+    const int a3 = 3;
+    const int a4 = 4;
+    printf("acc normalization(before): %d, %d, %d\n", acc_x_normalize, acc_y_normalize, acc_z_normalize);
+    printf("gyro normalization(before): %f, %f, %f\n", gyro_x_normalize, gyro_y_normalize, gyro_z_normalize);
+    t1.start(callback(calibrate_acc, (void *)&a1));
+    t2.start(callback(calibrate_acc, (void *)&a2));
+    t3.start(callback(calibrate_gyro, (void *)&a3));
+    t4.start(callback(calibrate_gyro, (void *)&a4));
+    t1.join();
+    t2.join();
+    t3.join();
+    t4.join();
+    printf("acc normalization: %d, %d, %d\n", acc_x_normalize, acc_y_normalize, acc_z_normalize);
+    printf("gyro normalization: %f, %f, %f\n", gyro_x_normalize, gyro_y_normalize, gyro_z_normalize);
 }
  
 int Mysensor(int *rotation, int *move)

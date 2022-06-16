@@ -18,6 +18,8 @@ AnalogIn y(A5);
 #define WEAPON_Y 225
 
 int main() {
+    printf("start calibration...\n");
+    data_init();
   BLE &ble = BLE::Instance();
   HIDComposite joystick(ble);
   joystick.setDeviceName("Universal_Joystick");
