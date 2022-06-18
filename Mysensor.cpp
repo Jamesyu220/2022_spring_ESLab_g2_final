@@ -440,7 +440,7 @@ int Mysensor(int *rotation, int *move)
         if(pDataXYZ[0] > 200 && (gyro_output & (GYRO_Z_CCLK|GYRO_Z_CLK)) ){
             // acc_output = 1;
             acc_output |= ACC_X_L;
-        }else if(pDataXYZ[0] < -200 && (gyro_output & (GYRO_Z_CCLK|GYRO_Z_CLK))){
+        }else if(pDataXYZ[0] < -800 && (gyro_output & (GYRO_Z_CCLK|GYRO_Z_CLK))){
             // acc_output = -2;
             acc_output |= ACC_X_R;
         }else{
@@ -453,7 +453,7 @@ int Mysensor(int *rotation, int *move)
     }
     *move = acc_output;
     
-    /// print acc status
+    ////// print acc status
     // printf("acc status: ");
     // if(acc_output & ACC_Z_U){
     //     printf("up, ");

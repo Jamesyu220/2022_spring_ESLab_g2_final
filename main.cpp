@@ -2,29 +2,62 @@
 #include "mbed.h"
 #include "Mysensor.h"
 #include "USBMouse.h"
+// #include "USBMouseKeyboard.h"
 
 static void MX_GPIO_Init(gpio_t &, gpio_t &, gpio_t &, gpio_t &, gpio_t &);
 AnalogIn x(A4);
 AnalogIn y(A5);
 // main() runs in its own thread in the OS
 
-#define FIRE_X 155
-#define FIRE_Y 195
-#define ANGLE_X 200
-#define ANGLE_Y 190
-#define POWER_X 200
-#define POWER_Y 225
-#define WEAPON_X 130
-#define WEAPON_Y 225
+#define MOVE_UNIT 150.0
+#define G_MOVE_UNIT 50.0
+
+
+// #define FIRE_X 155
+// #define FIRE_Y 195
+// #define ANGLE_X 200
+// #define ANGLE_Y 190
+// #define POWER_X 200
+// #define POWER_Y 225
+// #define WEAPON_X 130
+// #define WEAPON_Y 225
+
+// #define SCA 0.1
+// #define FIRE_X 155*SCA
+// #define FIRE_Y 195*SCA
+// #define ANGLE_X 200*SCA
+// #define ANGLE_Y 190*SCA
+// #define POWER_X 200*SCA
+// #define POWER_Y 225*SCA
+// #define WEAPON_X 130*SCA
+// #define WEAPON_Y 225*SCA
+
+
+#define SCA 10
+#define FIRE_X 1350*SCA + 2000
+#define FIRE_Y 1900*SCA + 7500
+#define ANGLE_X 2000*SCA
+#define ANGLE_Y 1900*SCA + 7500
+#define POWER_X 2000*SCA
+#define POWER_Y 2250*SCA + 8000
+#define WEAPON_X 1300*SCA
+#define WEAPON_Y 2250*SCA
+#define MOVE_L_X 1350*SCA 
+#define MOVE_L_Y 1900*SCA + 7500
+#define MOVE_R_X 1350*SCA - 3000
+#define MOVE_R_Y 1900*SCA + 7500
 
 uint16_t x_pos = 0;
 uint16_t y_pos = 0;
+int is_shoot= 0;
 
-USBMouse mouse;
+USBMouse mouse(true, ABS_MOUSE);
+// USBMouseKeyboard mouse;
+// USBMouse mouse;
 
 void mouse_g28(){
-    for (int i = 0; i < 4; i++){
-        mouse.move(-100, -100);
+    for (int i = 0; i < 5; i++){
+        mouse.move(-120, -100);
         ThisThread::sleep_for(10ms);
     }
     x_pos = 0;
@@ -74,7 +107,7 @@ void mouse_move_to(int x, int y)
 
 int main() {
     printf("start calibration...\n");
-    // data_init();
+    data_init();
     printf("start calibration...\n");
 //   BLE &ble = BLE::Instance();
 //   USBMouse mouse;
@@ -97,8 +130,8 @@ int main() {
   while (true) {
     //++i;
 
-    x_pos = 0;
-    y_pos = 0;
+    // x_pos = 0;
+    // y_pos = 0;
     bb = gpio_read(big_black);
     sb = gpio_read(small_black);
     ye = gpio_read(yellow);
@@ -115,57 +148,82 @@ int main() {
 
     // big black
     if (p_bb && !bb) {
-      printf("press big black \n");
-      mouse_g28();
-      ThisThread::sleep_for(30ms);
-      mouse_move_to(ANGLE_X, ANGLE_Y);
-      mouse.click(MOUSE_LEFT);
-    } else if (!p_bb && bb) {
-      printf("release big black \n");
+    //   printf("press big black \n");
+    //   mouse_g28();
+    //   ThisThread::sleep_for(30ms);
+    //   mouse_move_to(ANGLE_X, ANGLE_Y);
     //   mouse.click(MOUSE_LEFT);
+    // } else if (!p_bb && bb) {
+      
+    //   mouse.click(MOUSE_LEFT);
+
+        printf("release big black \n");
+        mouse.move(ANGLE_X, ANGLE_Y);
+        x_pos = ANGLE_X;
+        y_pos = ANGLE_Y;
+        ThisThread::sleep_for(30ms);
+        mouse.click(MOUSE_LEFT);
+        is_shoot = 1;
     }
     // small black
     if (!p_sb && sb) {
       printf("press small black \n");
-      mouse_g28();
-      ThisThread::sleep_for(30ms);
-      mouse_move_to(FIRE_X, FIRE_Y);
-      mouse.click(MOUSE_LEFT);
-    } else if (p_sb && !sb) {
-      printf("release small black \n");
+    //   mouse_g28();
+    //   ThisThread::sleep_for(30ms);
+    //   mouse_move_to(FIRE_X, FIRE_Y);
+    //   mouse.click(MOUSE_LEFT);
+    // } else if (p_sb && !sb) {
+    //     mouse.click(MOUSE_LEFT);
+    //   printf("release small black \n");
+        mouse.move(FIRE_X, FIRE_Y);
+        x_pos = FIRE_X;
+        y_pos = FIRE_Y;
+        ThisThread::sleep_for(30ms);
+        mouse.click(MOUSE_LEFT);
+        is_shoot = 1;
     }
     // yellow
     if (!p_ye && ye) {
       printf("press yellow \n");
-      mouse_g28();
-      ThisThread::sleep_for(30ms);
-      mouse_move_to(WEAPON_X, WEAPON_Y);
-      mouse.click(MOUSE_LEFT);
-    } else if (p_ye && !ye) {
+    //   mouse_g28();
+    //   ThisThread::sleep_for(30ms);
+    //   mouse_move_to(WEAPON_X, WEAPON_Y);
     //   mouse.click(MOUSE_LEFT);
-      printf("release yellow \n");
+    // } else if (p_ye && !ye) {
+    //   mouse.click(MOUSE_LEFT);
+    //   printf("release yellow \n");
+        mouse.move(WEAPON_X, WEAPON_Y);
+        x_pos = WEAPON_X;
+        y_pos = WEAPON_Y;
+        ThisThread::sleep_for(30ms);
+        mouse.click(MOUSE_LEFT);
+        is_shoot = 1;
     }
     // green
     if (!p_gr && gr) {
       printf("press green \n");
-      mouse_g28();
-      ThisThread::sleep_for(30ms);
-      mouse_move_to(POWER_X, POWER_Y);
-      ThisThread::sleep_for(30ms);
-      mouse.click(MOUSE_LEFT);
-    } else if (p_gr && !gr) {
-    //   mouse.click(MOUSE_LEFT);
-      ThisThread::sleep_for(30ms);
     //   mouse_g28();
     //   ThisThread::sleep_for(30ms);
     //   mouse_move_to(POWER_X, POWER_Y);
-      printf("release green \n");
+    //   ThisThread::sleep_for(30ms);
+    //   mouse.click(MOUSE_LEFT);
+    // } else if (p_gr && !gr) {
+    //   mouse.click(MOUSE_LEFT);
+    //   ThisThread::sleep_for(30ms);
+        mouse.move(POWER_X, POWER_Y);
+        x_pos = POWER_X;
+        y_pos = POWER_Y;
+        ThisThread::sleep_for(30ms);
+        mouse.click(MOUSE_LEFT);
+        printf("release green \n");
+        is_shoot = 1;
     }
 
     // sw
     if (p_s && !s) {
       printf("press sw \n");
       mouse.click(MOUSE_LEFT);
+      is_shoot = 0;
     } else if (!p_s && s) {
       printf("release sw \n");
     }
@@ -179,49 +237,79 @@ int main() {
     // x.set_reference_voltage(5.0f);
     if (x.read() > 0.6f) {
       printf("right \n");
-      x_pos += 10;
+      x_pos += (x.read() - 0.6f)*MOVE_UNIT;
+      mouse.move(x_pos, y_pos);
     } else if (x.read() < 0.4f) {
       printf("left \n");
-      x_pos -= 10;
+      x_pos -= (0.4f-x.read())*MOVE_UNIT;
+      mouse.move(x_pos, y_pos);
     }
 
     if (y.read() > 0.6f) {
       printf("down \n");
-      y_pos += 10;
+      y_pos += (y.read() - 0.6f)*MOVE_UNIT;
+      mouse.move(x_pos, y_pos);
     } else if (y.read() < 0.4f) {
       printf("up \n");
-      y_pos -= 10;
+      y_pos -= (0.4f-y.read())*MOVE_UNIT;
+      mouse.move(x_pos, y_pos);
     }
-    // int gyro_output, acc_output;
-    // Mysensor(&gyro_output, &acc_output);
-    // if (gyro_output & GYRO_Z_CLK) {
-    //   x_pos += 10;
-    // } else if (gyro_output & GYRO_Z_CCLK) {
-    //   x_pos -= 10;
-    // } else {
-    //   ;
-    // }
 
-    // if (gyro_output & GYRO_Y_R) {
-    //   x_pos += 10;
-    // } else if (gyro_output & GYRO_Y_L) {
-    //   x_pos -= 10;
-    // } else {
-    //   ;
-    // }
 
-    // if (gyro_output & GYRO_X_B) {
-    //   y_pos -= 10;
-    // } else if (gyro_output & GYRO_X_F) {
-    //   y_pos += 10;
-    // } else {
-    //   ;
-    // }
+    int gyro_output, acc_output;
+    Mysensor(&gyro_output, &acc_output);
+    if (gyro_output & GYRO_Z_CLK) {
+        printf("gright");
+      x_pos += G_MOVE_UNIT;
+      mouse.move(x_pos, y_pos);
+      ThisThread::sleep_for(30ms);
+    } else if (gyro_output & GYRO_Z_CCLK) {
+      x_pos -= G_MOVE_UNIT;
+      mouse.move(x_pos, y_pos);
+      ThisThread::sleep_for(30ms);
+      printf("gleft\n");
+    } else {
+      ;
+    }
+
+    if (gyro_output & GYRO_Y_R) {
+      x_pos += G_MOVE_UNIT;
+      mouse.move(x_pos, y_pos);
+      printf("gright");
+      ThisThread::sleep_for(30ms);
+    } else if (gyro_output & GYRO_Y_L) {
+        printf("gleft\n");
+      x_pos -= G_MOVE_UNIT;
+      mouse.move(x_pos, y_pos);
+      ThisThread::sleep_for(30ms);
+  
+    } else {
+      ;
+    }
+
+
+
+
+
+
+    if (gyro_output & GYRO_X_B) {
+      y_pos -= G_MOVE_UNIT*3;
+      printf("gup \n");
+      mouse.move(x_pos, y_pos);
+      ThisThread::sleep_for(30ms);
+    } else if (gyro_output & GYRO_X_F) {
+      y_pos += G_MOVE_UNIT*3;
+      printf("gdown \n");
+      mouse.move(x_pos, y_pos);
+      ThisThread::sleep_for(30ms);
+    } else {
+      ;
+    }
 
     // // if(acc_output & ACC_Z_U){
-    // //     y_pos -= 10;
+    // //     y_pos -= 200;
     // // }else if(acc_output & ACC_Z_D){
-    // //     y_pos += 10;
+    // //     y_pos += 200;
     // // }else{
     // //     ;
     // // }
@@ -233,18 +321,32 @@ int main() {
     // // }else{
     // //     printf("no y, ");
     // // }
-
-    // // if(acc_output & ACC_X_R){
-    // //     x_pos += 10;
-    // // }else if(acc_output & ACC_X_L){
-    // //     x_pos -= 10;
-    // // }else{
-    // //    ;
-    // // }
-
-    mouse.move(x_pos, y_pos);
-    ThisThread::sleep_for(30ms);
+    if (is_shoot == 0){
+        if(acc_output & ACC_X_L){
+        printf("acc right\n");
+        mouse.move(MOVE_L_X, MOVE_L_Y);
+        x_pos = MOVE_L_X;
+        y_pos = MOVE_L_Y;
+        ThisThread::sleep_for(30ms);
+        mouse.click(MOUSE_LEFT);
+        ThisThread::sleep_for(100ms);
+        }else if(acc_output & ACC_X_R){
+            printf("acc left\n");
+            mouse.move(MOVE_R_X, MOVE_R_Y);
+            x_pos = MOVE_R_X;
+            y_pos = MOVE_R_Y;
+            ThisThread::sleep_for(30ms);
+            mouse.click(MOUSE_LEFT);
+            ThisThread::sleep_for(100ms);
+        }else{
+        ;
+        }
+    }
+    
+    // printf("(%d, %d)\n", x_pos, y_pos);
+    // mouse.move(x_pos, y_pos);
   }
+    
 }
 
 /** Configure pins as
